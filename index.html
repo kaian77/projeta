@@ -209,12 +209,13 @@
 
 <div id="top">
   <div class="brand">Proj<b>eta</b></div>
+  <button class="chip" id="btnDel" style="display:none;color:#ff7b6b"></button>
   <button class="chip" id="btnPlay"></button>
   <button class="chip" id="btnSound"></button>
 </div>
 
 <div id="sheet">
-  <div class="sh-head"><h3>Camadas</h3><button class="ib" id="btnCloseSheet" aria-label="Fechar"></button></div>
+  <div class="sh-head"><h3>Camadas</h3><div style="display:flex;gap:6px;align-items:center"><button class="chip" id="btnClearAll" style="color:#ff7b6b">Apagar tudo</button><button class="ib" id="btnCloseSheet" aria-label="Fechar"></button></div></div>
   <div class="sh-list" id="list"></div>
 </div>
 
@@ -452,6 +453,7 @@ function render(){
   });
   drawOverlay();
   $('#empty').style.display = S.layers.length ? 'none' : 'flex';
+  $('#btnDel').style.display = (selL() && !S.show && !D.on && !C.on) ? '' : 'none';
   $('#dpad').classList.toggle('on', !!(selL() && S.selCorner!==null && !S.show && !$('#sheet').classList.contains('open')));
 }
 
@@ -871,6 +873,23 @@ async function duplicate(L){
   commit(); toast('Camada duplicada: arraste para a próxima área');
 }
 window.projetaCut = { start:startCut, stop:stopCut, duplicate, C };
+
+/* ---------- apagar ---------- */
+$('#btnDel').innerHTML = svg('trash') + 'Apagar';
+$('#btnDel').onclick = () => { const L = selL(); if (L) remove(L); };
+let clearArm = null;
+$('#btnClearAll').onclick = () => {
+  const b = $('#btnClearAll');
+  if (!S.layers.length) return;
+  if (!clearArm){ b.textContent = 'Toque de novo p/ confirmar'; clearArm = setTimeout(()=>{ clearArm=null; b.textContent='Apagar tudo'; }, 3000); return; }
+  clearTimeout(clearArm); clearArm = null; b.textContent = 'Apagar tudo';
+  if (undoBuf) finalizeDelete();
+  S.layers.forEach(L => { L.el.remove(); dbDelMedia(L.id); if (L.url) URL.revokeObjectURL(L.url); });
+  S.layers = []; S.sel = null; S.selCorner = null; commit(); toast('Tudo apagado');
+};
+document.addEventListener('keydown', (e) => {
+  if ((e.key==='Delete') && !S.show && selL() && e.target.tagName!=='INPUT' && e.target.tagName!=='SELECT') remove(selL());
+});
 
 /* ---------- botão flutuante de caneta ---------- */
 $('#penFab').innerHTML = svg('pen');
