@@ -132,6 +132,20 @@
   .layer[data-fx=respirar] > :is(img,video,canvas){animation-name:fxRespirar;animation-timing-function:ease-in-out}
   .layer[data-fx=cores] > :is(img,video,canvas){animation-name:fxCores;animation-timing-function:linear}
   .layer[data-fx=acender] > :is(img,video,canvas){animation-name:fxAcender;animation-timing-function:ease-out}
+  .layer.deck > img{position:absolute;inset:0}
+  .layer.deck > img.in{z-index:2}
+  .tr-subir{animation:trSubir .9s cubic-bezier(.2,.7,.2,1) both}
+  .tr-descer{animation:trDescer .9s cubic-bezier(.2,.7,.2,1) both}
+  .tr-deslizar{animation:trDeslizar .7s cubic-bezier(.2,.7,.2,1) both}
+  .tr-voltar{animation:trVoltar .7s cubic-bezier(.2,.7,.2,1) both}
+  .tr-zoom{animation:trZoom .7s cubic-bezier(.2,.7,.2,1) both}
+  .tr-surgir{animation:trSurgir .6s ease both}
+  @keyframes trSubir{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
+  @keyframes trDescer{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
+  @keyframes trDeslizar{from{transform:translateX(100%);opacity:.2}to{transform:none;opacity:1}}
+  @keyframes trVoltar{from{transform:translateX(-100%);opacity:.2}to{transform:none;opacity:1}}
+  @keyframes trZoom{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+  @keyframes trSurgir{from{opacity:0}to{opacity:1}}
   @keyframes fxPulsar{0%,100%{opacity:1}50%{opacity:.25}}
   @keyframes fxPiscar{0%{opacity:1}50%{opacity:0}}
   @keyframes fxRespirar{0%,100%{filter:brightness(.45) saturate(1)}50%{filter:brightness(1.35) saturate(1.5)}}
@@ -203,7 +217,7 @@
       <li>Arraste as 4 bolinhas até os cantos da face do objeto.</li>
       <li>Use <b>Grade</b> para alinhar e <b>Show</b> para projetar.</li>
     </ol>
-    <div class="tip">Dica: use vídeos com fundo preto. Preto não acende no projetor.</div>
+    <div class="tip">Dica: use vídeos com fundo preto. Preto não acende no projetor.<br>Para apresentação: Mídia → Apresentação (PDF).</div>
   </div>
 </div>
 
@@ -223,7 +237,7 @@
   <div class="sh-head"><h3>Interação</h3><button class="ib" id="btnCloseI" aria-label="Fechar"></button></div>
   <div class="ipanel">
     <p><b style="color:#ddd">Teclas:</b> no modo Show, 1–9 liga/desliga as camadas com aquela tecla. Seta → ou passador de slides avança um passo (1, 2, 3…), seta ← volta, 0 reinicia.</p>
-    <p><b style="color:#ddd">Mão (câmera):</b> aponte a câmera para a área projetada, calibre, e marque camadas como "botão". Segurar a mão parada no botão ou fechar a mão aciona a tecla escolhida.</p>
+    <p><b style="color:#ddd">Mão (câmera):</b> aponte a câmera para a área projetada e calibre.<br>• <b>Deslizar a mão aberta</b> para a esquerda: próximo slide; para a direita: volta.<br>• <b>Fechar a mão</b> em cima de uma camada marcada "mão pode arrastar": pega; mova e <b>abra a mão</b> para soltar.<br>• <b>Segurar a mão parada</b> (ou fechar) num "botão": aciona a tecla escolhida.</p>
     <div class="st" id="camStatus">Câmera desligada</div>
     <button class="btn acc" id="btnCam">Ligar câmera</button>
     <button class="btn" id="btnCalib">Calibrar (automático)</button>
@@ -276,7 +290,8 @@
 <div id="toast"><span id="toastMsg"></span><button id="toastAct"></button></div>
 <input type="file" id="file" accept=".mp4,.webm,.mov,.m4v,.png,.jpg,.jpeg,.gif,.webp,video/mp4,video/webm,video/quicktime,image/png,image/jpeg,image/gif,image/webp" multiple hidden>
 <input type="file" id="file2" multiple hidden>
-<div id="pick" style="position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.6);z-index:60;padding:0 12px calc(84px + var(--safe-b))"><div style="background:#141414;border:1px solid #2b2b2b;border-radius:14px;padding:14px;width:100%;max-width:420px"><div style="font-weight:650;margin-bottom:4px">Adicionar mídia</div><div style="color:#8a8a8a;font-size:12px;margin-bottom:12px">Se a galeria abrir a câmera ou ficar preta, use "Arquivos".</div><button id="pkGal" style="width:100%;padding:13px;border-radius:10px;background:#ff6a1a;color:#111;font-weight:650;margin-bottom:8px">Galeria (vídeo ou imagem)</button><button id="pkFile" style="width:100%;padding:13px;border-radius:10px;background:#222;border:1px solid #2b2b2b;margin-bottom:8px">Arquivos</button><button id="pkX" style="width:100%;padding:10px;color:#8a8a8a">Cancelar</button></div></div>
+<input type="file" id="file3" multiple hidden>
+<div id="pick" style="position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.6);z-index:60;padding:0 12px calc(84px + var(--safe-b))"><div style="background:#141414;border:1px solid #2b2b2b;border-radius:14px;padding:14px;width:100%;max-width:420px"><div style="font-weight:650;margin-bottom:4px">Adicionar mídia</div><div style="color:#8a8a8a;font-size:12px;margin-bottom:12px">Se a galeria abrir a câmera ou ficar preta, use "Arquivos".</div><button id="pkGal" style="width:100%;padding:13px;border-radius:10px;background:#ff6a1a;color:#111;font-weight:650;margin-bottom:8px">Galeria (vídeo ou imagem)</button><button id="pkFile" style="width:100%;padding:13px;border-radius:10px;background:#222;border:1px solid #2b2b2b;margin-bottom:8px">Arquivos</button><button id="pkDeck" style="width:100%;padding:13px;border-radius:10px;background:#222;border:1px solid #ff6a1a;color:#ffb27a;margin-bottom:8px">Apresentação (PDF ou imagens dos slides)</button><button id="pkX" style="width:100%;padding:10px;color:#8a8a8a">Cancelar</button></div></div>
 
 <script>
 (() => {
@@ -381,7 +396,7 @@ function defaultCorners(aspect){
 
 function buildEl(L){
   const el = document.createElement('div');
-  el.className = 'layer' + (L.type==='mask' ? ' mask' : L.type==='draw' ? ' draw' : '');
+  el.className = 'layer' + (L.type==='mask' ? ' mask' : L.type==='draw' ? ' draw' : L.type==='deck' ? ' deck' : '');
   el.style.setProperty('--c', L.color);
   if (L.type==='image'){
     const m = document.createElement('img'); m.src = L.url; m.draggable=false; el.appendChild(m); L.media = m;
@@ -390,6 +405,12 @@ function buildEl(L){
     m.src=L.url; m.loop=true; m.muted=!S.sound; m.playsInline=true; m.autoplay=true; m.setAttribute('playsinline','');
     el.appendChild(m); L.media=m;
     if (S.playing) m.play().catch(()=>{});
+  }
+  if (L.type==='deck'){
+    const a = document.createElement('img'), b = document.createElement('img');
+    a.draggable = b.draggable = false; el.append(a, b); L.imgs = [a, b]; L.front = 0;
+    L.pageUrls = L.pages.map(bl => URL.createObjectURL(bl));
+    a.src = L.pageUrls[L.idx||0] || ''; b.style.opacity = 0;
   }
   if (L.type==='draw'){
     const c = document.createElement('canvas'); c.width=SZ; c.height=SZ; el.appendChild(c); L.canvas=c;
@@ -490,14 +511,16 @@ function drawOverlay(){
 }
 
 /* ---------- touch ---------- */
-let drag = null, lastTap = 0;
+let drag = null, lastTap = 0, lpT = null;
 touch.addEventListener('pointerdown', (e) => {
   if (D.on){ drawDown(e); return; }
   if (C.on){ cutDown(e); return; }
   if (S.show){
-    const t = performance.now();
-    if (t - lastTap < 350) exitShow(); else toast('Toque 2x para sair do modo show', null, 1500);
-    lastTap = t; return;
+    const x = e.clientX;
+    clearTimeout(lpT); lpT = setTimeout(() => { lpT = null; exitShow(); }, 900);
+    touch.addEventListener('pointerup', function u(){ touch.removeEventListener('pointerup', u);
+      if (lpT){ clearTimeout(lpT); lpT=null; if (x > W()/2) next(); else prev(); } }, { once:true });
+    return;
   }
   if (drag) return;
   if ($('#sheet').classList.contains('open')) { closeSheet(); }
@@ -563,6 +586,7 @@ function renderList(){
     if (L.type==='image'){ const i=document.createElement('img'); i.src=L.url; th.appendChild(i); }
     else if (L.type==='video'){ const v=document.createElement('video'); v.src=L.url; v.muted=true; v.playsInline=true; v.preload='metadata'; th.appendChild(v); }
     else if (L.type==='draw'){ th.textContent='desenho'; }
+    else if (L.type==='deck'){ const i=document.createElement('img'); i.src=L.pageUrls[L.idx||0]; th.appendChild(i); }
     else { th.style.background='#000'; th.textContent='preto'; }
     const mid = document.createElement('div');
     mid.innerHTML = `<div class="nm">${esc(L.name)}</div><div class="sub"><span>${Math.round(L.opacity*100)}%</span><input type="range" min="0" max="100" value="${Math.round(L.opacity*100)}"></div>`;
@@ -588,6 +612,9 @@ function renderList(){
     sub2.innerHTML = `<label>Tecla <select data-f="key">${opts(L.key||0)}</select></label>
       <label><input type="checkbox" data-f="startHidden" ${L.startHidden?'checked':''}> começa oculta</label>
       <label>Botão aciona <select data-f="button">${opts(L.button||0)}</select></label>
+      ${L.type==='deck' ? `<label>Slide <b style="color:#ddd">${(L.idx||0)+1}/${L.pages.length}</b></label>
+      <label>Transição <select data-f="trans" data-s="1">${TRANS.map(([v,t])=>`<option value="${v}" ${(L.trans||'subir')===v?'selected':''}>${t}</option>`).join('')}</select></label>` : ''}
+      ${(L.type!=='deck') ? `<label><input type="checkbox" data-f="grab" ${L.grab?'checked':''}> mão pode arrastar</label>` : ''}
       ${L.type!=='mask' ? `<label>Efeito <select data-f="fx" data-s="1">${FX.map(([v,t])=>`<option value="${v}" ${(L.fx||'')===v?'selected':''}>${t}</option>`).join('')}</select></label>
       <label>Velocidade <select data-f="fxSpeed">${['Lenta','Média','Rápida'].map((t,i)=>`<option value="${i}" ${(L.fxSpeed??1)==i?'selected':''}>${t}</option>`).join('')}</select></label>` : ''}`;
     sub2.querySelectorAll('select,input').forEach(inp => {
@@ -681,7 +708,7 @@ async function enterShow(){
   document.body.classList.add('show'); render();
   try { await document.documentElement.requestFullscreen({navigationUI:'hide'}); } catch(e){}
   try { wake = await navigator.wakeLock?.request('screen'); } catch(e){}
-  toast('Modo show · toque 2x para sair', null, 2200);
+  toast('Modo show · toque à direita avança, à esquerda volta · segure 1s para sair', null, 3000);
 }
 function exitShow(){
   S.show=false; $('#dShow').textContent='Tela cheia'; document.body.classList.remove('show'); S.layers.forEach(L=>L.on=true); S.step=0; render(); drawHand(null);
@@ -724,13 +751,15 @@ function tx(store, mode, fn){
   });
 }
 const dbPutMedia = (L) => tx('media','readwrite', s => s.put(L.blob, L.id));
-const dbDelMedia = (id) => tx('media','readwrite', s => s.delete(id));
+const idbGet = (store, key) => new Promise(res => { if (!db) return res(null); try { const t=db.transaction(store); const r=t.objectStore(store).get(key); r.onsuccess=()=>res(r.result); r.onerror=()=>res(null); } catch(e){ res(null); } });
+const dbPutPages = (L) => tx('media','readwrite', s => { L.pages.forEach((b,i) => s.put(b, L.id+'#'+i)); });
+const dbDelMedia = (id) => tx('media','readwrite', s => { s.delete(id); s.delete(IDBKeyRange.bound(id+'#', id+'#\uffff')); });
 let saveT=null;
 function save(){
   clearTimeout(saveT);
   saveT = setTimeout(() => {
     const meta = S.layers.map(L => ({ id:L.id, type:L.type, name:L.name, corners:L.corners, opacity:L.opacity,
-      visible:L.visible, rot:L.rot, flip:L.flip, color:L.color, key:L.key||0, startHidden:!!L.startHidden, button:L.button||0, shape:L.shape||null, fx:L.fx||'', fxSpeed:L.fxSpeed??1 }));
+      visible:L.visible, rot:L.rot, flip:L.flip, color:L.color, key:L.key||0, startHidden:!!L.startHidden, button:L.button||0, shape:L.shape||null, fx:L.fx||'', fxSpeed:L.fxSpeed??1, grab:!!L.grab, trans:L.trans||'subir', idx:L.idx||0, pageCount:L.pages?L.pages.length:0 }));
     tx('meta','readwrite', s => s.put({ layers:meta, uid, calib:S.calib, dwell:S.dwell, fist:S.fist, cursor:S.cursor }, 'state'));
   }, 300);
 }
@@ -742,6 +771,13 @@ async function load(){
   if (st.calib) S.calib = st.calib; if (st.dwell) S.dwell = st.dwell; if (st.fist!==undefined) S.fist = st.fist; if (st.cursor!==undefined) S.cursor = st.cursor; syncInter();
   for (const m of st.layers){
     const L = { ...m, on:true, corners: m.corners.map(c=>[...c]), shape: m.shape ? m.shape.map(c=>[...c]) : null };
+    if (L.type==='deck'){
+      const pages = [];
+      for (let i=0;i<(m.pageCount||0);i++){ const bl = await idbGet('media', L.id+'#'+i); if (bl) pages.push(bl); }
+      if (!pages.length) continue;
+      L.pages = pages; if ((L.idx||0) >= pages.length) L.idx = 0;
+      buildEl(L); S.layers.push(L); continue;
+    }
     if (L.type!=='mask'){
       const blob = await new Promise(res => { try { const t=db.transaction('media'); const r=t.objectStore('media').get(L.id); r.onsuccess=()=>res(r.result); r.onerror=()=>res(null); } catch(e){ res(null); } });
       if (!blob && L.type!=='draw') continue;
@@ -861,6 +897,7 @@ $('#cDone').onclick = stopCut;
 
 /* ---------- duplicar ---------- */
 async function duplicate(L){
+  if (L.type==='deck'){ toast('Apresentação não pode ser duplicada'); return; }
   const N = { ...L, id:'L'+(uid++), name:L.name+' (cópia)', on:true, el:null, media:null, canvas:null,
     corners: L.corners.map(([x,y]) => [x+0.03, y+0.03]), shape: L.shape ? L.shape.map(c=>[...c]) : null,
     color: COLORS[S.layers.length % COLORS.length] };
@@ -873,6 +910,71 @@ async function duplicate(L){
   commit(); toast('Camada duplicada: arraste para a próxima área');
 }
 window.projetaCut = { start:startCut, stop:stopCut, duplicate, C };
+
+/* ---------- apresentação (PDF / slides) ---------- */
+const TRANS = [['subir','Revelar subindo (gráfico)'],['descer','Revelar descendo'],['deslizar','Deslizar'],['zoom','Zoom'],['surgir','Aparecer suave'],['nenhuma','Sem animação']];
+const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174';
+function loadPdfJs(){
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = PDFJS + '/pdf.min.js';
+    sc.onload = () => { try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + '/pdf.worker.min.js'; } catch(e){} res(window.pdfjsLib); };
+    sc.onerror = () => rej(new Error('pdfjs')); document.head.appendChild(sc); });
+}
+async function pdfToPages(file){
+  const lib = await loadPdfJs();
+  const doc = await lib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const out = [];
+  for (let i=1;i<=doc.numPages;i++){
+    toast(`Lendo página ${i} de ${doc.numPages}…`, null, 4000);
+    const pg = await doc.getPage(i), v1 = pg.getViewport({ scale:1 });
+    const sc = Math.min(2.5, 1920 / v1.width), vp = pg.getViewport({ scale: sc });
+    const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0,0,c.width,c.height);
+    await pg.render({ canvasContext:g, viewport:vp }).promise;
+    out.push(await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9)));
+  }
+  return out;
+}
+async function addDeck(files){
+  files = [...files];
+  const off = files.filter(f => /\.(pptx?|docx?|key|odp|odt)$/i.test(f.name));
+  if (off.length){ toast('PowerPoint/Word: salve como PDF (Arquivo → Salvar como → PDF) e envie o PDF', null, 6000); files = files.filter(f => !off.includes(f)); }
+  let pages = [];
+  try {
+    for (const f of files){
+      if (f.type==='application/pdf' || /\.pdf$/i.test(f.name)) pages = pages.concat(await pdfToPages(f));
+      else if (f.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(f.name)) pages.push(f);
+    }
+  } catch(e){ toast('Não consegui ler o PDF. Precisa de internet na primeira vez.', null, 5000); return; }
+  if (!pages.length) return;
+  if (files.every(f => !/\.pdf$/i.test(f.name))) pages.sort((a,b) => (a.name||'').localeCompare(b.name||'', undefined, { numeric:true }));
+  const aspect = await new Promise(r => { const im = new Image(); im.onload = () => r(im.naturalWidth/im.naturalHeight || 1.77); im.onerror = () => r(1.77); im.src = URL.createObjectURL(pages[0]); });
+  const L = { id:'L'+(uid++), type:'deck', name:'Apresentação ('+pages.length+' slides)', pages, idx:0, trans:'subir',
+    opacity:1, visible:true, rot:0, flip:false, key:0, startHidden:false, button:0, on:true, color:COLORS[S.layers.length % COLORS.length] };
+  let w = 0.86, h = w*W()/aspect/H(); if (h > 0.8){ h = 0.8; w = h*H()*aspect/W(); }
+  L.corners = [[.5-w/2,.5-h/2],[.5+w/2,.5-h/2],[.5+w/2,.5+h/2],[.5-w/2,.5+h/2]];
+  buildEl(L); S.layers.unshift(L); S.sel = L.id; dbPutPages(L); commit();
+  toast(`${pages.length} slides prontos. No Show: toque à direita, seta → ou deslize a mão`, null, 4000);
+}
+const deck = () => [...S.layers].reverse().find(L => L.type==='deck' && L.visible);
+function goSlide(L, n, dir){
+  n = Math.max(0, Math.min(L.pages.length-1, n)); if (n === (L.idx||0)) return false;
+  L.idx = n;
+  const inc = L.imgs[1-L.front], out = L.imgs[L.front];
+  let tr = L.trans || 'subir'; if (tr==='deslizar' && dir<0) tr = 'voltar';
+  inc.className = ''; inc.src = L.pageUrls[n]; inc.style.opacity = 1;
+  void inc.offsetWidth;
+  if (tr !== 'nenhuma') inc.className = 'in tr-' + tr; else inc.className = 'in';
+  const done = () => { out.style.opacity = 0; out.className=''; inc.className=''; };
+  if (tr === 'nenhuma') done(); else inc.addEventListener('animationend', done, { once:true });
+  L.front = 1 - L.front; save(); renderList();
+  return true;
+}
+function next(){ const L = deck(); if (L && goSlide(L, (L.idx||0)+1, 1)) return; stepTo(S.step+1); }
+function prev(){ const L = deck(); if (L && goSlide(L, (L.idx||0)-1, -1)) return; stepTo(S.step-1); }
+$('#pkDeck').onclick = () => { pick.style.display='none'; $('#file3').click(); };
+$('#file3').onchange = async (e) => { await addDeck(e.target.files); e.target.value=''; };
+window.projetaDeck = { next, prev, addDeck };
 
 /* ---------- apagar ---------- */
 $('#btnDel').innerHTML = svg('trash') + 'Apagar';
@@ -919,8 +1021,8 @@ document.addEventListener('keydown', (e) => {
   if (e.target.tagName==='INPUT' || e.target.tagName==='SELECT') return;
   if (/^[1-9]$/.test(e.key)) { fire(+e.key); e.preventDefault(); }
   else if (e.key==='0') resetScene();
-  else if (['ArrowRight','PageDown',' ','Enter'].includes(e.key)) { stepTo(S.step+1); e.preventDefault(); }
-  else if (['ArrowLeft','PageUp','Backspace'].includes(e.key)) { stepTo(S.step-1); e.preventDefault(); }
+  else if (['ArrowRight','PageDown',' ','Enter'].includes(e.key)) { next(); e.preventDefault(); }
+  else if (['ArrowLeft','PageUp','Backspace'].includes(e.key)) { prev(); e.preventDefault(); }
 });
 
 /* ---------- interação: mão pela câmera ---------- */
@@ -1038,6 +1140,7 @@ $('#btnCalib').onclick = calibAuto;
 $('#btnCalibMan').onclick = calibManual;
 
 /* detecção de mão + acionamento */
+let held = null, swipe = [], swipeCool = 0;
 let handPos = null, handFist = false, prevFist = false, dw = { id:null, since:0, fired:false }, lastSeen = 0;
 function isFist(lm){
   const w = lm[0], dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
@@ -1064,11 +1167,27 @@ function drawCamPrev(res){
 }
 function onHand(pos, fist=false){
   const now = performance.now();
-  if (!pos){ if (now - lastSeen > 350){ handPos=null; dw={id:null,since:0,fired:false}; drawHand(null); } return; }
+  if (!pos){ if (now - lastSeen > 350){ if (held){ held=null; save(); } swipe=[]; handPos=null; dw={id:null,since:0,fired:false}; drawHand(null); } return; }
   lastSeen = now;
   handPos = handPos ? [handPos[0]*0.45 + pos[0]*0.55, handPos[1]*0.45 + pos[1]*0.55] : pos;
   handFist = fist;
   const p = [handPos[0]*W(), handPos[1]*H()];
+  // pegar e arrastar
+  if (held){
+    if (!fist){ held = null; save(); }
+    else { const dx = (p[0]-held.last[0])/W(), dy = (p[1]-held.last[1])/H(); held.last = p;
+      held.L.corners.forEach(c => { c[0]+=dx; c[1]+=dy; }); render(); prevFist = fist; drawHand(p, 1, true, true); return; }
+  }
+  if (fist && !prevFist){
+    for (let i=S.layers.length-1;i>=0;i--){ const L=S.layers[i];
+      if (L.grab && L.visible && L.on!==false && inside(px(L),p)){ held = { L, last:p }; prevFist = fist; drawHand(p, 1, true, true); return; } }
+  }
+  // deslizar
+  swipe.push([now, p[0]]); while (swipe.length && now - swipe[0][0] > 380) swipe.shift();
+  if (!fist && swipe.length > 3 && now > swipeCool){
+    const dx = p[0] - swipe[0][1];
+    if (Math.abs(dx) > W()*0.22){ swipeCool = now + 900; swipe = []; dx < 0 ? next() : prev(); pulse(p); }
+  }
   let zone = null;
   for (let i=S.layers.length-1;i>=0;i--){ const L=S.layers[i]; if (L.button && L.visible && L.on!==false && inside(px(L),p)){ zone=L; break; } }
   if (!zone || zone.id!==dw.id) dw = { id: zone?zone.id:null, since:now, fired:false };
