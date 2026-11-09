@@ -85,7 +85,7 @@
   .nm{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sub{font-size:11px;color:var(--mute);display:flex;align-items:center;gap:8px;margin-top:4px}
   .sub input[type=range]{flex:1;accent-color:var(--acc);height:20px}
-  .acts{display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end;max-width:150px}
+  .acts{display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end;max-width:190px}
   .ib{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:#cfcfcf}
   .ib:active{background:#2a2a2a}
   .ib svg{width:18px;height:18px}
@@ -137,6 +137,18 @@
   .dbtn{height:34px;padding:0 12px;border-radius:9px;background:#222;border:1px solid var(--line);font-size:12px}
   .dbtn.on{background:#2a1a10;color:var(--acc2);border-color:#5a3418}
   .dbtn.acc{background:var(--acc);color:#111;border-color:var(--acc);font-weight:650}
+  #penFab{position:fixed;left:calc(12px + var(--safe-l));bottom:calc(84px + var(--safe-b));width:52px;height:52px;border-radius:50%;
+    background:var(--acc);color:#111;display:flex;align-items:center;justify-content:center;z-index:28;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+  #penFab svg{width:24px;height:24px}
+  body.show #penFab{bottom:calc(16px + var(--safe-b));left:calc(16px + var(--safe-l));width:40px;height:40px;opacity:.35;background:#333;color:#fff}
+  body.show #penFab svg{width:18px;height:18px}
+  body.drawing #penFab,body.cutting #penFab,body.sheet-open #penFab{display:none}
+  #cutbar{position:fixed;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+    padding:8px calc(10px + var(--safe-r)) calc(8px + var(--safe-b)) calc(10px + var(--safe-l));background:rgba(14,14,14,.94);
+    border-top:1px solid var(--line);z-index:30}
+  #cutbar .hint{width:100%;text-align:center;font-size:12px;color:var(--mute)}
+  body.cutting #cutbar{display:flex}
+  body.cutting #bar,body.cutting #dpad,body.cutting #sheet,body.cutting #isheet{display:none!important}
   #calib{position:fixed;inset:0;background:#000;z-index:70;display:none}
   #calib.on{display:block}
   #calib .dot{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:#fff}
@@ -242,6 +254,13 @@
   <button class="dbtn" id="dShow">Tela cheia</button>
   <button class="dbtn acc" id="dDone">Concluir</button>
 </div>
+<button id="penFab" aria-label="Desenhar"></button>
+<div id="cutbar">
+  <div class="hint">Toque em volta da área para marcar os pontos. Arraste um ponto para ajustar.</div>
+  <button class="dbtn" id="cUndo">Desfazer ponto</button>
+  <button class="dbtn" id="cClear">Tirar recorte</button>
+  <button class="dbtn acc" id="cDone">Concluir</button>
+</div>
 <div id="toast"><span id="toastMsg"></span><button id="toastAct"></button></div>
 <input type="file" id="file" accept=".mp4,.webm,.mov,.m4v,.png,.jpg,.jpeg,.gif,.webp,video/mp4,video/webm,video/quicktime,image/png,image/jpeg,image/gif,image/webp" multiple hidden>
 <input type="file" id="file2" multiple hidden>
@@ -271,6 +290,8 @@ const I = {
   reset:'<rect x="5" y="5" width="14" height="14" rx="1"/><path d="M2 2l3 3M22 2l-3 3M2 22l3-3M22 22l-3-3"/>',
   trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
   close:'<path d="M6 6l12 12M18 6L6 18"/>',
+  cut:'<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.1 8.1L20 20M8.1 15.9L20 4"/>',
+  dup:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3"/>',
   pen:'<path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 7l3 3"/>',
   hand:'<path d="M8 13V5.5a1.5 1.5 0 013 0V11M11 10.5V4a1.5 1.5 0 013 0v6.5M14 10.5V5.5a1.5 1.5 0 013 0V13M17 9.5a1.5 1.5 0 013 0V14a7 7 0 01-7 7h-1a7 7 0 01-5.6-2.8L4 15a1.5 1.5 0 012.3-1.9L8 15"/>',
   l:'<path d="M15 5l-7 7 7 7"/>', r:'<path d="M9 5l7 7-7 7"/>', u:'<path d="M5 15l7-7 7 7"/>', d:'<path d="M5 9l7 7 7-7"/>'
@@ -402,6 +423,8 @@ function render(){
     el.style.zIndex = i+1;
     el.style.display = L.visible ? '' : 'none';
     el.style.opacity = (L.on===false) ? 0 : L.opacity;
+    const cp = (L.shape && L.shape.length>=3) ? 'polygon(' + L.shape.map(([u,v]) => (u*100).toFixed(3)+'% '+(v*100).toFixed(3)+'%').join(',') + ')' : '';
+    if (el.style.clipPath !== cp) { el.style.clipPath = cp; el.style.webkitClipPath = cp; }
     let src = [[0,0],[SZ,0],[SZ,SZ],[0,SZ]];
     if (L.flip) src = [src[1],src[0],src[3],src[2]];
     const c = px(L);
@@ -422,9 +445,18 @@ function drawOverlay(){
     const p = px(L).map(q=>q.join(',')).join(' ');
     out += `<polygon points="${p}" fill="none" stroke="${L.button?'#2ec4ff':'rgba(255,255,255,.45)'}" stroke-width="1" stroke-dasharray="5 5"/>`;
   });
+  if (C.on && C.layer){
+    const L = C.layer, q = px(L).map(q=>q.join(',')).join(' ');
+    out += `<polygon points="${q}" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1" stroke-dasharray="6 6"/>`;
+    const sp = shapePx(L);
+    if (sp.length) out += `<polygon points="${sp.map(p=>p.join(',')).join(' ')}" fill="rgba(255,106,26,.12)" stroke="#ff6a1a" stroke-width="2"/>`;
+    sp.forEach(([x,y],i) => { out += `<circle cx="${x}" cy="${y}" r="${C.drag===i?13:10}" fill="rgba(0,0,0,.55)" stroke="${i===sp.length-1?'#fff':'#ff6a1a'}" stroke-width="2.5"/>`; });
+    overlay.innerHTML = out; return;
+  }
   const L = selL();
   if (L && L.visible){
     const c = px(L);
+    if (L.shape && L.shape.length>=3) out += `<polygon points="${shapePx(L).map(p=>p.join(',')).join(' ')}" fill="none" stroke="#ffb27a" stroke-width="1.5" stroke-dasharray="3 4"/>`;
     out += `<polygon points="${c.map(q=>q.join(',')).join(' ')}" fill="rgba(255,106,26,.06)" stroke="#ff6a1a" stroke-width="2"/>`;
     const cx = c.reduce((s,q)=>s+q[0],0)/4, cy = c.reduce((s,q)=>s+q[1],0)/4;
     out += `<g stroke="#ff6a1a" stroke-width="2"><circle cx="${cx}" cy="${cy}" r="12" fill="rgba(0,0,0,.5)"/><path d="M${cx-6} ${cy}h12M${cx} ${cy-6}v12"/></g>`;
@@ -441,6 +473,7 @@ function drawOverlay(){
 let drag = null, lastTap = 0;
 touch.addEventListener('pointerdown', (e) => {
   if (D.on){ drawDown(e); return; }
+  if (C.on){ cutDown(e); return; }
   if (S.show){
     const t = performance.now();
     if (t - lastTap < 350) exitShow(); else toast('Toque 2x para sair do modo show', null, 1500);
@@ -470,6 +503,7 @@ touch.addEventListener('pointerdown', (e) => {
 });
 touch.addEventListener('pointermove', (e) => {
   if (D.on){ drawMove(e); return; }
+  if (C.on){ cutMove(e); return; }
   if (!drag || e.pointerId!==drag.id) return;
   const L = selL(); if (!L) return;
   const p = [e.clientX, e.clientY], k = S.fine ? 0.25 : 1;
@@ -480,6 +514,7 @@ touch.addEventListener('pointermove', (e) => {
   render();
 });
 const endDrag = (e) => { if (D.on){ drawUp(e); return; }
+  if (C.on){ cutUp(e); return; }
    if (drag && e.pointerId===drag.id){ drag=null; document.body.classList.remove('dragging'); save(); } };
 touch.addEventListener('pointerup', endDrag);
 touch.addEventListener('pointercancel', endDrag);
@@ -522,6 +557,8 @@ function renderList(){
       mk('rot','Girar 90°', ()=>{ L.rot=(L.rot+1)%4; commit(); });
       mk('flip','Espelhar', ()=>{ L.flip=!L.flip; commit(); });
     }
+    mk('cut','Recortar forma', ()=>{ startCut(L); });
+    mk('dup','Duplicar', ()=>{ duplicate(L); });
     mk('up','Subir', ()=>{ move(L,1); });
     mk('down','Descer', ()=>{ move(L,-1); });
     mk('reset','Resetar forma', ()=>{ L.corners = defaultCorners(L.type==='mask'?1:(L.media?.naturalWidth? L.media.naturalWidth/L.media.naturalHeight : L.media?.videoWidth ? L.media.videoWidth/L.media.videoHeight : 1.6)); commit(); });
@@ -598,8 +635,8 @@ $('#file').onchange = onFiles; $('#file2').onchange = onFiles;
 $('#btnMask').onclick = addMask;
 $('#btnLayers').onclick = () => { $('#sheet').classList.contains('open') ? closeSheet() : openSheet(); };
 $('#btnCloseSheet').onclick = closeSheet;
-function openSheet(){ closeI(); $('#sheet').classList.add('open'); $('#btnLayers').classList.add('on'); renderList(); render(); }
-function closeSheet(){ $('#sheet').classList.remove('open'); $('#btnLayers').classList.remove('on'); render(); }
+function openSheet(){ closeI(); document.body.classList.add('sheet-open'); $('#sheet').classList.add('open'); $('#btnLayers').classList.add('on'); renderList(); render(); }
+function closeSheet(){ document.body.classList.remove('sheet-open'); $('#sheet').classList.remove('open'); $('#btnLayers').classList.remove('on'); render(); }
 $('#btnGrid').onclick = () => { S.grid=!S.grid; syncChips(); };
 $('#btnFine').onclick = () => { S.fine=!S.fine; syncChips(); toast(S.fine?'Ajuste fino ligado: arrastar move 4x mais devagar':'Ajuste fino desligado'); };
 $('#btnPlay').onclick = () => {
@@ -671,7 +708,7 @@ function save(){
   clearTimeout(saveT);
   saveT = setTimeout(() => {
     const meta = S.layers.map(L => ({ id:L.id, type:L.type, name:L.name, corners:L.corners, opacity:L.opacity,
-      visible:L.visible, rot:L.rot, flip:L.flip, color:L.color, key:L.key||0, startHidden:!!L.startHidden, button:L.button||0 }));
+      visible:L.visible, rot:L.rot, flip:L.flip, color:L.color, key:L.key||0, startHidden:!!L.startHidden, button:L.button||0, shape:L.shape||null }));
     tx('meta','readwrite', s => s.put({ layers:meta, uid, calib:S.calib, dwell:S.dwell, fist:S.fist, cursor:S.cursor }, 'state'));
   }, 300);
 }
@@ -682,7 +719,7 @@ async function load(){
   uid = Math.max(uid, st.uid||0);
   if (st.calib) S.calib = st.calib; if (st.dwell) S.dwell = st.dwell; if (st.fist!==undefined) S.fist = st.fist; if (st.cursor!==undefined) S.cursor = st.cursor; syncInter();
   for (const m of st.layers){
-    const L = { ...m, on:true, corners: m.corners.map(c=>[...c]) };
+    const L = { ...m, on:true, corners: m.corners.map(c=>[...c]), shape: m.shape ? m.shape.map(c=>[...c]) : null };
     if (L.type!=='mask'){
       const blob = await new Promise(res => { try { const t=db.transaction('media'); const r=t.objectStore('media').get(L.id); r.onsuccess=()=>res(r.result); r.onerror=()=>res(null); } catch(e){ res(null); } });
       if (!blob && L.type!=='draw') continue;
@@ -710,6 +747,7 @@ function invFor(L){
   return homog(dst, src);
 }
 function startDraw(){
+  if (C.on) stopCut();
   const L = drawLayer(); S.sel = L.id; L.visible = true; L.on = true;
   D.on = true; D.layer = L; document.body.classList.add('drawing'); closeSheet(); closeI(); render();
   toast('Desenhe com o dedo. Para encaixar num objeto, arraste os cantos da camada "Desenho ao vivo".', null, 2600);
@@ -753,6 +791,71 @@ $('#btnDraw').onclick = startDraw;
 syncDraw();
 window.projetaDraw = { start:startDraw, stop:stopDraw, D };
 
+/* ---------- recorte com vários pontos ---------- */
+const C = { on:false, layer:null, drag:null, pid:null, inv:null };
+function fwdFor(L){
+  let src = [[0,0],[SZ,0],[SZ,SZ],[0,SZ]]; if (L.flip) src = [src[1],src[0],src[3],src[2]];
+  const c = px(L), dst = [0,1,2,3].map(k => c[(k + L.rot) % 4]);
+  return homog(src, dst);
+}
+function shapePx(L){ if (!L.shape || !L.shape.length) return []; const h = fwdFor(L); if (!h) return [];
+  return L.shape.map(([u,v]) => applyH(h, [u*SZ, v*SZ])); }
+function startCut(L){
+  if (D.on) stopDraw();
+  C.on = true; C.layer = L; S.sel = L.id; L.visible = true; L.on = true;
+  if (!L.shape) L.shape = [];
+  document.body.classList.add('cutting'); closeSheet(); closeI(); render();
+}
+function stopCut(){
+  const L = C.layer; if (L && L.shape && L.shape.length < 3) L.shape = null;
+  C.on=false; C.layer=null; document.body.classList.remove('cutting'); render(); renderList(); save();
+}
+function cutDown(e){
+  if (C.pid!==null) return;
+  const L = C.layer, p = [e.clientX, e.clientY], sp = shapePx(L);
+  C.inv = invFor(L); if (!C.inv) return;
+  let best=-1, bd=30; sp.forEach((q,i)=>{ const d=Math.hypot(q[0]-p[0],q[1]-p[1]); if (d<bd){bd=d;best=i;} });
+  const loc = applyH(C.inv, p), uv = [loc[0]/SZ, loc[1]/SZ];
+  if (best<0){
+    if (L.shape.length < 3) { L.shape.push(uv); best = L.shape.length-1; }
+    else { // insere no lado mais próximo
+      let bi=0, bdist=Infinity;
+      for (let i=0;i<sp.length;i++){ const a=sp[i], b=sp[(i+1)%sp.length]; const d=segDist(p,a,b); if (d<bdist){bdist=d;bi=i;} }
+      L.shape.splice(bi+1, 0, uv); best = bi+1;
+    }
+  }
+  C.drag = best; C.pid = e.pointerId; touch.setPointerCapture(e.pointerId); render();
+}
+function cutMove(e){
+  if (e.pointerId!==C.pid || C.drag===null) return;
+  const loc = applyH(C.inv, [e.clientX, e.clientY]); C.layer.shape[C.drag] = [loc[0]/SZ, loc[1]/SZ]; render();
+}
+function cutUp(e){ if (e.pointerId!==C.pid) return; C.pid=null; C.drag=null; render(); save(); }
+function segDist(p,a,b){ const dx=b[0]-a[0], dy=b[1]-a[1], l=dx*dx+dy*dy || 1; let t=((p[0]-a[0])*dx+(p[1]-a[1])*dy)/l; t=Math.max(0,Math.min(1,t));
+  return Math.hypot(p[0]-(a[0]+t*dx), p[1]-(a[1]+t*dy)); }
+$('#cUndo').onclick = () => { const L=C.layer; if (L && L.shape.length){ L.shape.pop(); render(); save(); } };
+$('#cClear').onclick = () => { const L=C.layer; if (L){ L.shape=[]; render(); save(); } };
+$('#cDone').onclick = stopCut;
+
+/* ---------- duplicar ---------- */
+async function duplicate(L){
+  const N = { ...L, id:'L'+(uid++), name:L.name+' (cópia)', on:true, el:null, media:null, canvas:null,
+    corners: L.corners.map(([x,y]) => [x+0.03, y+0.03]), shape: L.shape ? L.shape.map(c=>[...c]) : null,
+    color: COLORS[S.layers.length % COLORS.length] };
+  if (L.type==='image' || L.type==='video') N.url = URL.createObjectURL(L.blob);
+  if (L.type==='draw') N.blob = null;
+  buildEl(N);
+  if (L.type==='draw') N.canvas.getContext('2d').drawImage(L.canvas, 0, 0);
+  S.layers.splice(S.layers.indexOf(L)+1, 0, N); S.sel = N.id; S.selCorner = null;
+  if (N.blob) dbPutMedia(N); if (L.type==='draw') saveDrawing(N);
+  commit(); toast('Camada duplicada: arraste para a próxima área');
+}
+window.projetaCut = { start:startCut, stop:stopCut, duplicate, C };
+
+/* ---------- botão flutuante de caneta ---------- */
+$('#penFab').innerHTML = svg('pen');
+$('#penFab').onclick = () => { if (C.on) stopCut(); startDraw(); };
+
 /* ---------- triggers (teclas / passos) ---------- */
 function setOn(L, v){
   if (L.on===v) return; L.on = v;
@@ -783,8 +886,8 @@ document.addEventListener('keydown', (e) => {
 
 /* ---------- interação: mão pela câmera ---------- */
 const isheet = $('#isheet');
-function openI(){ closeSheet(); isheet.classList.add('open'); $('#btnInter').classList.add('on'); render(); }
-function closeI(){ isheet.classList.remove('open'); $('#btnInter').classList.remove('on'); }
+function openI(){ closeSheet(); document.body.classList.add('sheet-open'); isheet.classList.add('open'); $('#btnInter').classList.add('on'); render(); }
+function closeI(){ if (!$('#sheet').classList.contains('open')) document.body.classList.remove('sheet-open'); isheet.classList.remove('open'); $('#btnInter').classList.remove('on'); }
 $('#btnInter').onclick = () => isheet.classList.contains('open') ? closeI() : openI();
 $('#btnCloseI').onclick = closeI;
 function syncInter(){
