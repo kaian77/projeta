@@ -126,6 +126,17 @@
   .opt input[type=range]{flex:1;accent-color:var(--acc)}
   .opt input[type=checkbox]{accent-color:var(--acc);width:18px;height:18px}
   .layer > canvas{width:100%;height:100%;display:block;pointer-events:none}
+  .layer[data-fx] > img,.layer[data-fx] > video,.layer[data-fx] > canvas{animation-duration:var(--d,2s);animation-iteration-count:infinite}
+  .layer[data-fx=pulsar] > :is(img,video,canvas){animation-name:fxPulsar;animation-timing-function:ease-in-out}
+  .layer[data-fx=piscar] > :is(img,video,canvas){animation-name:fxPiscar;animation-timing-function:steps(1,end)}
+  .layer[data-fx=respirar] > :is(img,video,canvas){animation-name:fxRespirar;animation-timing-function:ease-in-out}
+  .layer[data-fx=cores] > :is(img,video,canvas){animation-name:fxCores;animation-timing-function:linear}
+  .layer[data-fx=acender] > :is(img,video,canvas){animation-name:fxAcender;animation-timing-function:ease-out}
+  @keyframes fxPulsar{0%,100%{opacity:1}50%{opacity:.25}}
+  @keyframes fxPiscar{0%{opacity:1}50%{opacity:0}}
+  @keyframes fxRespirar{0%,100%{filter:brightness(.45) saturate(1)}50%{filter:brightness(1.35) saturate(1.5)}}
+  @keyframes fxCores{from{filter:hue-rotate(0deg) saturate(1.4)}to{filter:hue-rotate(360deg) saturate(1.4)}}
+  @keyframes fxAcender{0%{opacity:0;filter:brightness(2.2)}25%{opacity:1;filter:brightness(1.6)}60%,100%{opacity:1;filter:brightness(1)}}
   #drawbar{position:fixed;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
     padding:8px calc(10px + var(--safe-r)) calc(8px + var(--safe-b)) calc(10px + var(--safe-l));background:rgba(14,14,14,.94);
     border-top:1px solid var(--line);z-index:30}
@@ -302,6 +313,10 @@ const $ = (s) => document.querySelector(s);
 const stage = $('#stage'), touch = $('#touch'), overlay = $('#overlay');
 const COLORS = ['#ff6a1a','#2ec4ff','#7dff5a','#ff3d8b','#ffd23d','#b48cff','#3dffd2','#ff8c6b'];
 const SZ = 1000;
+const FX = [['','Nenhum'],['pulsar','Pulsar'],['respirar','Respirar (brilho)'],['cores','Trocar cores'],['piscar','Piscar'],['acender','Acender e firmar']];
+const FX_SPEED = [ {pulsar:'4s',respirar:'6s',cores:'14s',piscar:'1.6s',acender:'6s'},
+                   {pulsar:'2s',respirar:'3.5s',cores:'7s',piscar:'.8s',acender:'3.5s'},
+                   {pulsar:'.9s',respirar:'1.6s',cores:'2.5s',piscar:'.3s',acender:'1.6s'} ];
 
 const S = { layers:[], sel:null, selCorner:null, grid:false, fine:false, playing:true, sound:false, show:false,
   step:0, calib:null, dwell:1500, fist:true, cursor:true };
@@ -425,6 +440,9 @@ function render(){
     el.style.opacity = (L.on===false) ? 0 : L.opacity;
     const cp = (L.shape && L.shape.length>=3) ? 'polygon(' + L.shape.map(([u,v]) => (u*100).toFixed(3)+'% '+(v*100).toFixed(3)+'%').join(',') + ')' : '';
     if (el.style.clipPath !== cp) { el.style.clipPath = cp; el.style.webkitClipPath = cp; }
+    const fx = (L.type!=='mask' && L.fx) ? L.fx : '';
+    if ((el.dataset.fx||'') !== fx){ if (fx) el.dataset.fx = fx; else delete el.dataset.fx; }
+    el.style.setProperty('--d', FX_SPEED[L.fxSpeed||1][L.fx]||'2s');
     let src = [[0,0],[SZ,0],[SZ,SZ],[0,SZ]];
     if (L.flip) src = [src[1],src[0],src[3],src[2]];
     const c = px(L);
@@ -567,10 +585,12 @@ function renderList(){
     const opts = (v) => ['<option value="0">–</option>'].concat([1,2,3,4,5,6,7,8,9].map(n=>`<option value="${n}" ${v==n?'selected':''}>${n}</option>`)).join('');
     sub2.innerHTML = `<label>Tecla <select data-f="key">${opts(L.key||0)}</select></label>
       <label><input type="checkbox" data-f="startHidden" ${L.startHidden?'checked':''}> começa oculta</label>
-      <label>Botão aciona <select data-f="button">${opts(L.button||0)}</select></label>`;
+      <label>Botão aciona <select data-f="button">${opts(L.button||0)}</select></label>
+      ${L.type!=='mask' ? `<label>Efeito <select data-f="fx" data-s="1">${FX.map(([v,t])=>`<option value="${v}" ${(L.fx||'')===v?'selected':''}>${t}</option>`).join('')}</select></label>
+      <label>Velocidade <select data-f="fxSpeed">${['Lenta','Média','Rápida'].map((t,i)=>`<option value="${i}" ${(L.fxSpeed??1)==i?'selected':''}>${t}</option>`).join('')}</select></label>` : ''}`;
     sub2.querySelectorAll('select,input').forEach(inp => {
       inp.addEventListener('click', e => e.stopPropagation());
-      inp.addEventListener('change', () => { const f=inp.dataset.f; L[f] = inp.type==='checkbox' ? inp.checked : +inp.value; save(); drawOverlay(); });
+      inp.addEventListener('change', () => { const f=inp.dataset.f; L[f] = inp.type==='checkbox' ? inp.checked : (inp.dataset.s ? inp.value : +inp.value); save(); render(); });
     });
     row.append(th, mid, acts, sub2);
     row.addEventListener('click', ()=>{ S.sel=L.id; S.selCorner=null; render(); renderList(); });
@@ -708,7 +728,7 @@ function save(){
   clearTimeout(saveT);
   saveT = setTimeout(() => {
     const meta = S.layers.map(L => ({ id:L.id, type:L.type, name:L.name, corners:L.corners, opacity:L.opacity,
-      visible:L.visible, rot:L.rot, flip:L.flip, color:L.color, key:L.key||0, startHidden:!!L.startHidden, button:L.button||0, shape:L.shape||null }));
+      visible:L.visible, rot:L.rot, flip:L.flip, color:L.color, key:L.key||0, startHidden:!!L.startHidden, button:L.button||0, shape:L.shape||null, fx:L.fx||'', fxSpeed:L.fxSpeed??1 }));
     tx('meta','readwrite', s => s.put({ layers:meta, uid, calib:S.calib, dwell:S.dwell, fist:S.fist, cursor:S.cursor }, 'state'));
   }, 300);
 }
